@@ -13,12 +13,13 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#define DEBUG
 
 #ifdef BUILD_KINDLE
 #define PUZZLE_PATH "/mnt/us/extensions/sudoku/data/puzzles"
 #define SAVE_PATH "/mnt/us/extensions/sudoku/data/saved_sudoku.txt"
-#define GRID_X 60
-#define GRID_Y 60
+#define GRID_X 64
+#define GRID_Y 64
 #define CMD_X 47
 #define CMD_Y 43
 #define TOOL_X 115
@@ -27,8 +28,8 @@
 #ifdef BUILD_PC
 #define PUZZLE_PATH "data/puzzles"
 #define SAVE_PATH "data/saved_sudoku.txt"
-#define GRID_X 50
-#define GRID_Y 50
+#define GRID_X 56
+#define GRID_Y 56
 #define CMD_X 43
 #define CMD_Y 43
 #define TOOL_X 94
@@ -38,7 +39,7 @@
 #endif
 #endif
 
-#define APPLICATION_TITLE "- Kindle Sudoku -"
+#define APPLICATION_TITLE "Hello World!"
 #define QUIT_BUTTON_TEXT "Quit"
 #define LOAD_BUTTON_TEXT "Load"
 #define SAVE_BUTTON_TEXT "Save"
@@ -71,7 +72,7 @@ static void selection( GtkWidget *widget, gpointer data )
 
 	selected_x = (int)((int*)data)[0];
 	selected_y = (int)((int*)data)[1];
-	
+
 	gtk_widget_modify_bg( sudokuw[selected_x][selected_y], GTK_STATE_PRELIGHT, &color );
 	#ifdef DEBUG
 	g_print("New selection: %i, %i\n", selected_x, selected_y);
@@ -95,13 +96,13 @@ static void save( GtkWidget *widget, gpointer data )
 
 	if( current_sudoku == -1 )	// no puzzle to save
 		return;
-	
+
 	savefile = fopen( SAVE_PATH, "w" );
 	if( !savefile )
 		return;
-	
+
 	fprintf( savefile, "%s\n0", sudoku_files[current_sudoku] );
-	
+
 	for( i=0; i<9; i++ )
 	{
 		for( j=0; j<9; j++ )
@@ -128,12 +129,12 @@ static void new( GtkWidget *widget, gpointer data )
 	int i,j;
 	char n[2] = { 0, '\0' };
 	char c;
-	
+
 	GdkColor color;
 	gdk_color_parse( "#eeeeee", &color );
-	
+
 	int file = -1;
-	
+
 	if( data == NULL )
 	{
 		do
@@ -150,7 +151,7 @@ static void new( GtkWidget *widget, gpointer data )
 	#ifdef DEBUG
 	g_print("New sudoku: %i: %s\n", file, sudoku_files[file]);
 	#endif
-	
+
 	// fill the grid
 	sudoku_file = fopen( sudoku_files[file], "r" );
 	for( i = 0; i < 9; i++ )
@@ -178,28 +179,31 @@ static void new( GtkWidget *widget, gpointer data )
 // load saved puzzle progress
 static void load( GtkWidget *widget, gpointer data )
 {
+	#ifdef DEBUG
+	g_print("Began loading puzzle with progrss\n");
+	#endif
 	int i,j, file = -1;
 	char buffer[256];
 	char c = 0, label[2] = { 0, '\0' };
 	FILE *savefile = fopen( SAVE_PATH, "r" );
-	
+
 	if( !savefile )
 		return;
-		
+
 	fscanf( savefile, "%s", buffer );
-	
+
 	for( i=0; i<sudoku_total_files; i++ )
 		if( strcmp( sudoku_files[i], buffer ) == 0 )
 		{
 			file = i;
 			break;
 		}
-		
+
 	new( NULL, (gpointer)file );
-	
+
 	while( c != '0' )
 		c = fgetc( savefile );
-	
+
 	for( i=0; i<9; i++ )
 		for( j=0; j<9; j++ )
 		{
@@ -245,10 +249,10 @@ int main( int argc, char *argv[] )
 	int *data = NULL;
 	char num[2] = { 0, '\0' };
 	char *n = NULL;
-	
+
 	DIR *dir;
 	struct dirent *ep;
-	
+
 	// count sudoku files and save paths to them
 	dir = opendir(PUZZLE_PATH);
 	while( ep = readdir(dir) )
@@ -294,7 +298,7 @@ int main( int argc, char *argv[] )
 
 	vbox = gtk_vbox_new( FALSE, 0 );
 	gtk_box_pack_start(GTK_BOX(vbox), lTitle, 0,0,5);
-	
+
 	// prepare the grid (with buttons)
 	for( i=0; i<9; i++ )
 	{
@@ -302,7 +306,7 @@ int main( int argc, char *argv[] )
 		for( j=0; j<9; j++ )
 		{
 			sudokuw[i][j] = gtk_button_new();
-			gtk_widget_set_sensitive(sudokuw[i][j], FALSE);
+			gtk_widget_set_sensitive(sudokuw[i][j], TRUE);
 			gtk_widget_set_size_request( sudokuw[i][j], GRID_X, GRID_Y );
 			data = (int*) malloc(sizeof(int)*2);
 			data[0] = i; data[1] = j;
@@ -321,7 +325,7 @@ int main( int argc, char *argv[] )
 			gtk_box_pack_start(GTK_BOX(vbox), separator, 0, 0, 5);
 		}
 	}
-	
+
 	// prepare the number buttons
 	cmdbox = gtk_hbox_new( FALSE, 0 );
 	for( i = 0; i < 10; i++ )
@@ -338,18 +342,18 @@ int main( int argc, char *argv[] )
 		n[0] = num[0];
 		g_signal_connect (numbers[i], "clicked", G_CALLBACK(put_number), n);
 	}
-	
-	
+
+
 	gtk_box_pack_start(GTK_BOX(vbox), cmdbox, 0, 0, 10 );
 	gtk_container_add(GTK_CONTAINER(window), vbox);
-	
+
 	// prepare the toolbox
 	toolbox = gtk_hbox_new( FALSE, 20 );
 	gtk_box_pack_start(GTK_BOX(toolbox), bNew, 0, 0, 5);
 	gtk_box_pack_start(GTK_BOX(toolbox), bSave, 0, 0, 5);
 	gtk_box_pack_start(GTK_BOX(toolbox), bLoad, 0, 0, 5);
 	gtk_box_pack_start(GTK_BOX(toolbox), bQuit, 0, 0, 5);
-	
+
 	gtk_box_pack_start(GTK_BOX(vbox), toolbox, 0, 0, 10 );
 
 	gtk_window_set_title( GTK_WINDOW(window), "L:A_N:application_ID:sudoku");
